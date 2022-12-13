@@ -7,8 +7,8 @@ export class CreateRoomDto {
   @Transform((value) => value.toString())
   hostId: string;
 
-  // @IsString()
-  // @IsNotEmpty()
-  // @Transform((value) => value.toString())
-  // pin: string;
+  @IsString()
+  @IsNotEmpty()
+  @Transform((value) => value.toString())
+  presentationId: string;
 }

@@ -78,25 +78,33 @@ export class RoomsGateway
     }
   }
 
-  @SubscribeMessage('submit')
+  @SubscribeMessage('submitAnswer')
   async submit(
-    @MessageBody() data: { answer: any; sildeId: string; roomId: string },
+    @MessageBody() data: { answer: any; slideIndex: string; roomId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
       const room = await this.roomsService.submitAnswer(data.roomId, {
         id: client.id,
         answer: data.answer,
-        slideId: data.sildeId,
+        slideIndex: data.slideIndex,
       });
-      this.io.to(room.host.hostClientId).emit('room_updated', room);
+      this.io.to(room.id).emit('room_updated', room);
     } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
 
-  @SubscribeMessage('removeRoom')
-  remove(@MessageBody() id: number) {
-    return this.roomsService.remove(id);
+  @SubscribeMessage('changeSlide')
+  async changeSlide(
+    @MessageBody() data: { slide: number; roomId: string },
+    @ConnectedSocket() client: Socket
+  ) {
+    try {
+      const room = await this.roomsService.changeSlide(data.roomId, data.slide);
+      this.io.to(room.id).emit('room_updated', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
   }
 }

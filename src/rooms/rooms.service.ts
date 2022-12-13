@@ -10,7 +10,16 @@ export class RoomsService {
     private readonly presentationService: PresentationsService,
   ) { }
   async create(createRoomDto) {
-    return this.roomsRepository.create(createRoomDto);
+    const presentation = await this.presentationService.findOne(
+      createRoomDto.presentationId,
+    );
+    if (!presentation) {
+      throw new NotFoundException(
+        `Presentation with id ${createRoomDto.presentationId} not found`,
+      );
+    }
+
+    return this.roomsRepository.create({ ...createRoomDto, presentation });
   }
 
   findAll() {
@@ -44,4 +53,13 @@ export class RoomsService {
     const roomUpdated = this.roomsRepository.submitAnswer(roomId, user);
     return roomUpdated;
   }
+  async changeSlide(roomId, slide) {
+    const room = await this.roomsRepository.findOne(roomId);
+    if (!room) {
+      throw new NotFoundException(`Room with id ${roomId} not found`);
+    }
+    const roomUpdated = await this.roomsRepository.changeSlide(roomId, slide);
+    return roomUpdated;
+  }
+
 }

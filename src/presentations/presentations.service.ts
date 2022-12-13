@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { HttpException, Injectable } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { UpdatePresentationDto } from './dto/update-presentation.dto';
 
 @Injectable()
 export class PresentationsService {
+  constructor(private readonly httpService: HttpService) { }
+
   create(createPresentationDto: CreatePresentationDto) {
     return 'This action adds a new presentation';
   }
@@ -12,8 +16,15 @@ export class PresentationsService {
     return `This action returns all presentations`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} presentation`;
+  async findOne(id: string) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`/presentations/${id}`),
+      );
+      return response.data;
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
   }
 
   update(id: number, updatePresentationDto: UpdatePresentationDto) {

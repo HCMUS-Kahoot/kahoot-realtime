@@ -26,14 +26,17 @@ export class PresentationsController {
   async findOne(@Param('id') id: string) {
     try {
       const response = await firstValueFrom(this.httpService.get(''));
-    }
-    catch (e) {
+      return response.data;
+    } catch (e) {
       throw new HttpException(e.message, e.status);
     }
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePresentationDto: UpdatePresentationDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updatePresentationDto: UpdatePresentationDto,
+  ) {
     return this.presentationsService.update(+id, updatePresentationDto);
   }
 

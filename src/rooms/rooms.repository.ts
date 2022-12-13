@@ -18,14 +18,16 @@ export class RoomsRepository {
       this.logger.log(`createRoomDto: ${createRoomDto}`);
       const room = {
         id: createRoomID(),
-        host: createRoomDto,
+        host: {
+          hostId: createRoomDto.hostId,
+          clientHostId: createRoomDto.clientHostId,
+        },
+        presentation: {
+          presentation: createRoomDto.presentation,
+          slide: 0,
+        },
         pin: createRoomPIN(),
-        users: [
-          // {
-          //   id: createRoomDto.socketId,
-          //   role: 'host',
-          // },
-        ],
+        users: [],
       };
       this.rooms.push(room);
       return room;
@@ -38,7 +40,7 @@ export class RoomsRepository {
     return `This action returns all rooms`;
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     try {
       const room = this.rooms.find((room) => room.id === id);
       if (!room) {
@@ -95,7 +97,6 @@ export class RoomsRepository {
     }
   }
 
-
   submitAnswer(roomId: string, user) {
     try {
       this.logger.log(`submitAnswer: ${roomId} - ${user}`);
@@ -107,7 +108,10 @@ export class RoomsRepository {
       if (!userExists) {
         throw new NotAcceptableException(`User with id ${user.id} not found`);
       }
-      userExists.answer.push(user.answer);
+      userExists.answer.push({
+        choice: user.answer,
+        slideIndex: user.slideIndex,
+      });
       return room;
     } catch (error) {
       throw new Error(`Error in submit answer: ${error.message}`);
@@ -120,5 +124,19 @@ export class RoomsRepository {
 
   remove(id: number) {
     return `This action removes a #${id} room`;
+  }
+
+  changeSlide(roomId: string, slide: number) {
+    try {
+      this.logger.log(`changeSlide: ${roomId} - ${slide}`);
+      const room = this.rooms.find((room) => room.id === roomId);
+      if (!room) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      room.presentation.slide = slide;
+      return room;
+    } catch (error) {
+      throw new Error(`Error in change slide: ${error.message}`);
+    }
   }
 }
