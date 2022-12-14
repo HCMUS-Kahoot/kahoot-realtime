@@ -19,7 +19,7 @@ export class PresentationsService {
   async findOne(id: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`/presentations/${id}`),
+        this.httpService.get(`/slides/getSlidesByPresentationId/${id}`),
       );
       return response.data;
     } catch (error) {
