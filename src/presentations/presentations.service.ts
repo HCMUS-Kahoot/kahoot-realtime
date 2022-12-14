@@ -1,11 +1,12 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { UpdatePresentationDto } from './dto/update-presentation.dto';
 
 @Injectable()
 export class PresentationsService {
+  private readonly logger = new Logger(PresentationsService.name);
   constructor(private readonly httpService: HttpService) { }
 
   create(createPresentationDto: CreatePresentationDto) {
@@ -21,8 +22,10 @@ export class PresentationsService {
       const response = await firstValueFrom(
         this.httpService.get(`/slides/getSlidesByPresentationId/${id}`),
       );
+      this.logger.log(`response: ${JSON.stringify(response.data)}`);
       return response.data;
     } catch (error) {
+      this.logger.error(`error: ${JSON.stringify(error)}`);
       throw new HttpException(error.message, error.status);
     }
   }

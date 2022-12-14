@@ -7,7 +7,11 @@ import { PORT } from './constant';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: '*',
+      origin: [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://kahoothcmus.netlify.app',
+      ],
     },
   });
   app.useGlobalPipes(new ValidationPipe());

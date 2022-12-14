@@ -17,6 +17,13 @@ import { ParticipantDto } from './dto/participant-dto';
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
   namespace: 'rooms',
+  cors: {
+    origin: [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://kahoothcmus.netlify.app',
+    ],
+  },
 }) // implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 export class RoomsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -54,9 +61,11 @@ export class RoomsGateway
         ...createRoomDto,
         clientHostId: client.id,
       });
+      this.logger.log(`Room: ${JSON.stringify(room)}`);
       client.join(room.id);
       this.io.to(room.id).emit('room_updated', room);
     } catch (error) {
+      this.logger.error(error);
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }

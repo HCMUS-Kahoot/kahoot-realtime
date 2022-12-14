@@ -1,10 +1,11 @@
 import { PresentationsService } from './../presentations/presentations.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomsRepository } from './rooms.repository';
 
 @Injectable()
 export class RoomsService {
+  private readonly logger = new Logger(RoomsService.name);
   constructor(
     private readonly roomsRepository: RoomsRepository,
     private readonly presentationService: PresentationsService,
@@ -13,6 +14,8 @@ export class RoomsService {
     const presentation = await this.presentationService.findOne(
       createRoomDto.presentationId,
     );
+
+    this.logger.log(`presentation: ${presentation}`);
     if (!presentation) {
       throw new NotFoundException(
         `Presentation with id ${createRoomDto.presentationId} not found`,
