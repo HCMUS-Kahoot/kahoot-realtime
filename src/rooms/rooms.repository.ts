@@ -21,6 +21,8 @@ export class RoomsRepository {
         host: {
           hostId: createRoomDto.hostId,
           clientHostId: createRoomDto.clientHostId,
+          chats: [],
+          questions: [],
         },
         presentation: {
           presentation: createRoomDto.presentation,
@@ -86,9 +88,11 @@ export class RoomsRepository {
         room.users.push({
           id: user.id,
           name: user.name,
+          clientId: user.clientId,
           answer: [],
-          comment: [],
-          vote: [],
+          chats: [],
+          questions: [],
+          votes: [],
         });
       }
       return room;
@@ -122,8 +126,16 @@ export class RoomsRepository {
     return `This action updates a #${id} room`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} room`;
+  removeClient(clientId: string) {
+    try {
+      this.rooms = this.rooms.filter((room) => {
+        room.users = room.users.filter((user) => user.clientId !== clientId);
+        return room;
+      }
+      );
+    } catch (error) {
+      throw new Error(`Error in remove room: ${error.message}`);
+    }
   }
 
   changeSlide(roomId: string, slide: number) {
@@ -137,6 +149,28 @@ export class RoomsRepository {
       return room;
     } catch (error) {
       throw new Error(`Error in change slide: ${error.message}`);
+    }
+  }
+  userPublicChat(roomId: string, user) {
+    try {
+      this.logger.log(`userPublicChat: ${roomId} - ${user}`);
+      const room = this.rooms.find((room) => room.id === roomId);
+      if (!room) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      let userExists = room.users.find((u) => u.id === user.id);
+      userExists =
+        userExists || (room.host.hostId === user.id ? room.host : null);
+      if (!userExists) {
+        throw new NotAcceptableException(`User with id ${user.id} not found`);
+      }
+      userExists.chats.push({
+        message: user.message,
+        time: Date.now(),
+      });
+      return room;
+    } catch (error) {
+      throw new Error(`Error in user public chat: ${error.message}`);
     }
   }
 }

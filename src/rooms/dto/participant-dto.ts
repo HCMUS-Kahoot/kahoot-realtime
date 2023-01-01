@@ -11,4 +11,8 @@ export class ParticipantDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 }

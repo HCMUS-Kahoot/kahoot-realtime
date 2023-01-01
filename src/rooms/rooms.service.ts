@@ -25,6 +25,9 @@ export class RoomsService {
     return this.roomsRepository.create({ ...createRoomDto, presentation });
   }
 
+  publicChat(roomId: string, arg1: { id: string; message: string; }) {
+    return this.roomsRepository.userPublicChat(roomId, arg1);
+  }
   findAll() {
     return `This action returns all rooms`;
   }
@@ -37,8 +40,8 @@ export class RoomsService {
     return `This action updates a #${id} room`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} room`;
+  removeClient(clientId: string) {
+    return this.roomsRepository.removeClient(clientId);
   }
   async addUserToRoomByPin(user) {
     const room = await this.roomsRepository.findByPin(user.pin);
