@@ -16,6 +16,16 @@ export class RoomsRepository {
   async create(createRoomDto) {
     try {
       this.logger.log(`createRoomDto: ${createRoomDto}`);
+      // check if room with presentationId exists already return that room
+      const existedRoom = this.rooms.find(
+        (room) => room.presentation.presentationId === createRoomDto.presentationId,
+      );
+
+      if (existedRoom) {
+        existedRoom.host.hostId = createRoomDto.hostId;
+        existedRoom.host.clientHostId = createRoomDto.clientHostId;
+        return existedRoom;
+      }
       const room = {
         id: createRoomID(),
         host: {
@@ -25,6 +35,7 @@ export class RoomsRepository {
           questions: [],
         },
         presentation: {
+          presentationId: createRoomDto.presentationId,
           presentation: createRoomDto.presentation,
           slide: 0,
         },
@@ -126,13 +137,20 @@ export class RoomsRepository {
     return `This action updates a #${id} room`;
   }
 
-  removeClient(clientId: string) {
+  removeClient(clientId: string): any {
     try {
+      const roomUpdated = [];
       this.rooms = this.rooms.filter((room) => {
-        room.users = room.users.filter((user) => user.clientId !== clientId);
-        return room;
-      }
-      );
+        room.users = room.users.filter((user) => {
+          if (user.clientId === clientId) {
+            roomUpdated.push(room);
+            return false;
+          }
+          return true;
+        });
+        return true;
+      });
+      return roomUpdated;
     } catch (error) {
       throw new Error(`Error in remove room: ${error.message}`);
     }
@@ -171,6 +189,29 @@ export class RoomsRepository {
       return room;
     } catch (error) {
       throw new Error(`Error in user public chat: ${error.message}`);
+    }
+  }
+
+  addQuestion(roomId: any, question: any) {
+    try {
+      this.logger.log(`addQuestion: ${roomId} - ${question}`);
+      const room = this.rooms.find((room) => room.id === roomId);
+      if (!room) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      let userExists = room.users.find((u) => u.id === question.userId);
+      userExists =
+        userExists || (room.host.hostId === question.userId ? room.host : null);
+
+      userExists.questions.push({
+        question: question.question,
+        time: Date.now(),
+        userId: question.userId,
+        voted: [],
+      });
+      return room;
+    } catch (error) {
+      throw new Error(`Error in add question: ${error.message}`);
     }
   }
 }

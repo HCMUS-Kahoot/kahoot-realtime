@@ -45,7 +45,12 @@ export class RoomsGateway
 
   handleDisconnect(client: Socket) {
     const sockets = this.io.sockets;
-    this.roomsService.removeClient(client.id);
+    const roomUpdated = this.roomsService.removeClient(client.id);
+    if (roomUpdated?.length > 0) {
+      roomUpdated.forEach((room) => {
+        this.io.to(room.id).emit('room_updated', room);
+      });
+    }
     this.logger.log(`Disconnected socket id: ${client.id}`);
     this.logger.debug(`Number of connected sockets: ${sockets.size}`);
   }
@@ -120,13 +125,30 @@ export class RoomsGateway
 
   @SubscribeMessage('publicChat')
   async publicChat(
-    @MessageBody() data: { message: string; roomId: string, userId: string },
+    @MessageBody() data: { message: string; roomId: string; userId: string },
     @ConnectedSocket() client: Socket
   ) {
     try {
       const room = await this.roomsService.publicChat(data.roomId, {
         id: data.userId,
         message: data.message,
+      });
+      this.io.to(room.id).emit('room_updated', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
+  @SubscribeMessage('addQuestion')
+  async addQuestion(
+    @MessageBody() data: { question: string; roomId: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { userId, roomId, question } = data;
+    try {
+      const room = await this.roomsService.addQuestion(roomId, {
+        userId,
+        question,
       });
       this.io.to(room.id).emit('room_updated', room);
     } catch (error) {

@@ -40,7 +40,7 @@ export class RoomsService {
     return `This action updates a #${id} room`;
   }
 
-  removeClient(clientId: string) {
+  removeClient(clientId: string): any {
     return this.roomsRepository.removeClient(clientId);
   }
   async addUserToRoomByPin(user) {
@@ -68,4 +68,15 @@ export class RoomsService {
     return roomUpdated;
   }
 
+  async addQuestion(roomId, question) {
+    const room = await this.roomsRepository.findOne(roomId);
+    if (!room) {
+      throw new NotFoundException(`Room with id ${roomId} not found`);
+    }
+    const roomUpdated = await this.roomsRepository.addQuestion(
+      roomId,
+      question,
+    );
+    return roomUpdated;
+  }
 }
