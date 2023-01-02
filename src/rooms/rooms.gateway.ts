@@ -45,7 +45,12 @@ export class RoomsGateway
 
   handleDisconnect(client: Socket) {
     const sockets = this.io.sockets;
-
+    const roomUpdated = this.roomsService.removeClient(client.id);
+    if (roomUpdated?.length > 0) {
+      roomUpdated.forEach((room) => {
+        this.io.to(room.id).emit('room_updated', room);
+      });
+    }
     this.logger.log(`Disconnected socket id: ${client.id}`);
     this.logger.debug(`Number of connected sockets: ${sockets.size}`);
   }
@@ -78,7 +83,7 @@ export class RoomsGateway
     try {
       const room = await this.roomsService.addUserToRoomByPin({
         ...user,
-        id: client.id,
+        clientId: client.id,
       });
       client.join(room.id);
       this.io.to(room.id).emit('room_updated', room);
@@ -89,12 +94,13 @@ export class RoomsGateway
 
   @SubscribeMessage('submitAnswer')
   async submit(
-    @MessageBody() data: { answer: any; slideIndex: string; roomId: string },
+    @MessageBody() data: { answer: any; slideIndex: string; roomId: string; userId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
       const room = await this.roomsService.submitAnswer(data.roomId, {
-        id: client.id,
+        id: data.userId,
+        clientId: client.id,
         answer: data.answer,
         slideIndex: data.slideIndex,
       });
@@ -116,4 +122,62 @@ export class RoomsGateway
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
+
+  @SubscribeMessage('publicChat')
+  async publicChat(
+    @MessageBody() data: { message: string; roomId: string; userId: string },
+    @ConnectedSocket() client: Socket
+  ) {
+    try {
+      const room = await this.roomsService.publicChat(data.roomId, {
+        id: data.userId,
+        message: data.message,
+      });
+      this.io.to(room.id).emit('room_updated', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
+  @SubscribeMessage('addQuestion')
+  async addQuestion(
+    @MessageBody() data: { question: string; roomId: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { userId, roomId, question } = data;
+    try {
+      const room = await this.roomsService.addQuestion(roomId, {
+        userId,
+        question,
+      });
+      this.io.to(room.id).emit('room_updated', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
+  @SubscribeMessage('voteQuestion')
+  async voteQuestion(
+    @MessageBody()
+    data: {
+      questionId: string;
+      roomId: string;
+      userId: string;
+      userIdVote: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { userId, roomId, questionId, userIdVote } = data;
+    try {
+      const room = await this.roomsService.voteQuestion(roomId, {
+        userId,
+        questionId,
+        userIdVote,
+      });
+      this.io.to(room.id).emit('room_updated', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
 }

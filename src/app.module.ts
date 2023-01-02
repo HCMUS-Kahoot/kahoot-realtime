@@ -5,6 +5,7 @@ import { Module } from '@nestjs/common';
 import configuration from './config/configuration';
 import { RoomsModule } from './rooms/rooms.module';
 import { PresentationsModule } from './presentations/presentations.module';
+import { RedisModule } from './redis/redis.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,6 +15,7 @@ import { PresentationsModule } from './presentations/presentations.module';
     }),
     PresentationsModule,
     RoomsModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

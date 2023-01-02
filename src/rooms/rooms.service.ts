@@ -25,6 +25,9 @@ export class RoomsService {
     return this.roomsRepository.create({ ...createRoomDto, presentation });
   }
 
+  publicChat(roomId: string, arg1: { id: string; message: string; }) {
+    return this.roomsRepository.userPublicChat(roomId, arg1);
+  }
   findAll() {
     return `This action returns all rooms`;
   }
@@ -37,8 +40,8 @@ export class RoomsService {
     return `This action updates a #${id} room`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} room`;
+  removeClient(clientId: string): any {
+    return this.roomsRepository.removeClient(clientId);
   }
   async addUserToRoomByPin(user) {
     const room = await this.roomsRepository.findByPin(user.pin);
@@ -65,4 +68,27 @@ export class RoomsService {
     return roomUpdated;
   }
 
+  async addQuestion(roomId, question) {
+    const room = await this.roomsRepository.findOne(roomId);
+    if (!room) {
+      throw new NotFoundException(`Room with id ${roomId} not found`);
+    }
+    const roomUpdated = await this.roomsRepository.addQuestion(
+      roomId,
+      question,
+    );
+    return roomUpdated;
+  }
+
+  async voteQuestion(roomId, question) {
+    const room = await this.roomsRepository.findOne(roomId);
+    if (!room) {
+      throw new NotFoundException(`Room with id ${roomId} not found`);
+    }
+    const roomUpdated = await this.roomsRepository.voteQuestion(
+      roomId,
+      question,
+    );
+    return roomUpdated;
+  }
 }
