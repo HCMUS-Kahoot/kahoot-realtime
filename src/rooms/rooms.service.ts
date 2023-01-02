@@ -79,4 +79,16 @@ export class RoomsService {
     );
     return roomUpdated;
   }
+
+  async voteQuestion(roomId, question) {
+    const room = await this.roomsRepository.findOne(roomId);
+    if (!room) {
+      throw new NotFoundException(`Room with id ${roomId} not found`);
+    }
+    const roomUpdated = await this.roomsRepository.voteQuestion(
+      roomId,
+      question,
+    );
+    return roomUpdated;
+  }
 }

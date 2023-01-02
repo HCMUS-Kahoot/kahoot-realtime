@@ -155,4 +155,29 @@ export class RoomsGateway
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
+
+  @SubscribeMessage('voteQuestion')
+  async voteQuestion(
+    @MessageBody()
+    data: {
+      questionId: string;
+      roomId: string;
+      userId: string;
+      userIdVote: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { userId, roomId, questionId, userIdVote } = data;
+    try {
+      const room = await this.roomsService.voteQuestion(roomId, {
+        userId,
+        questionId,
+        userIdVote,
+      });
+      this.io.to(room.id).emit('room_updated', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
 }

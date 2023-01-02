@@ -103,7 +103,6 @@ export class RoomsRepository {
           answer: [],
           chats: [],
           questions: [],
-          votes: [],
         });
       }
       return room;
@@ -206,12 +205,42 @@ export class RoomsRepository {
       userExists.questions.push({
         question: question.question,
         time: Date.now(),
-        userId: question.userId,
+        questionId: createUserID(),
         voted: [],
       });
       return room;
     } catch (error) {
       throw new Error(`Error in add question: ${error.message}`);
+    }
+  }
+
+  voteQuestion(roomId: any, question: any) {
+    try {
+      this.logger.log(`voteQuestion: ${roomId} - ${JSON.stringify(question)}`);
+      const room = this.rooms.find((room) => room.id === roomId);
+      if (!room) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      let userExists = room.users.find((u) => u.id === question.userId);
+      userExists =
+        userExists || (room.host.hostId === question.userId ? room.host : null);
+      if (!userExists) {
+        throw new NotAcceptableException(
+          `User with id ${question.userId} not found`,
+        );
+      }
+      userExists.questions.forEach((q) => {
+        if (q.questionId === question.questionId) {
+          if (q.voted.includes(question.userIdVote)) {
+            q.voted.splice(q.voted.indexOf(question.userIdVote), 1);
+          } else {
+            q.voted.push(question.userIdVote);
+          }
+        }
+      });
+      return room;
+    } catch (error) {
+      throw new Error(`Error in vote question: ${error.message}`);
     }
   }
 }
