@@ -5,6 +5,7 @@ import { RoomsRepository } from './rooms.repository';
 
 @Injectable()
 export class RoomsService {
+
   private readonly logger = new Logger(RoomsService.name);
   constructor(
     private readonly roomsRepository: RoomsRepository,
@@ -24,7 +25,9 @@ export class RoomsService {
 
     return this.roomsRepository.create({ ...createRoomDto, presentation });
   }
-
+  markAsReadQuestion(roomId: string, questionId: string) {
+    return this.roomsRepository.markAsReadQuestion(roomId, questionId);
+  }
   publicChat(roomId: string, arg1: { id: string; message: string; }) {
     return this.roomsRepository.userPublicChat(roomId, arg1);
   }
