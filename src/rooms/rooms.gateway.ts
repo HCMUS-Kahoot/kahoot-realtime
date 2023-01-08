@@ -196,4 +196,18 @@ export class RoomsGateway
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
+
+  @SubscribeMessage('endPresentation')
+  async endPresentation(
+    @MessageBody() data: { roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = data;
+    try {
+      const room = await this.roomsService.endAndSaveRoom(roomId);
+      this.io.to(roomId).emit('end_presentation', room);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
 }

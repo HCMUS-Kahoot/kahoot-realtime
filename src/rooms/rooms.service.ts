@@ -94,4 +94,26 @@ export class RoomsService {
     );
     return roomUpdated;
   }
+
+  async getPresentationInRoom(presentationId) {
+    return this.roomsRepository.getPresentationInRoom(presentationId);
+  }
+  async endAndSaveRoom(roomId) {
+    const roomRemoved = this.roomsRepository.removeRoom(roomId);
+    const data = {
+      userId: roomRemoved.host.hostId,
+      presentation: roomRemoved.presentation.presentationId,
+      startTime: new Date(roomRemoved.startTime),
+      endTime: new Date(),
+      joinUser: roomRemoved.users.map((user) => user.id),
+      chats: roomRemoved.chats,
+      questions: roomRemoved.questions,
+    };
+    console.log(data);
+    this.logger.log(`data: ${JSON.stringify(data)}`);
+    const dataSaved = await this.presentationService.endAndSavePresentation(
+      data,
+    );
+    return dataSaved;
+  }
 }

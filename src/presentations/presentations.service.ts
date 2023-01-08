@@ -30,6 +30,19 @@ export class PresentationsService {
     }
   }
 
+  async endAndSavePresentation(data) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(`/presentationSessions`, data),
+      );
+      this.logger.log(`response: ${JSON.stringify(response.data)}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error(`error: ${JSON.stringify(error)}`);
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
   update(id: number, updatePresentationDto: UpdatePresentationDto) {
     return `This action updates a #${id} presentation`;
   }

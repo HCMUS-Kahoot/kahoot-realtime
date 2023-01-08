@@ -1,12 +1,21 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Sse } from '@nestjs/common';
 import { AppService } from './app.service';
+import { interval, map } from 'rxjs';
+import { RoomsService } from './rooms/rooms.service';
 
-@Controller()
+@Controller('api')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly roomService: RoomsService,
+  ) { }
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Sse('presentation')
+  getPresentation() {
+    return interval(5000).pipe(
+      map((number) => ({
+        data: `Hello World ${number}`,
+      })),
+    );
   }
 }

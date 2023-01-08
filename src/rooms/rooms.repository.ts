@@ -44,6 +44,7 @@ export class RoomsRepository {
         users: [],
         chats: [],
         questions: [],
+        startTime: new Date().getTime(),
       };
       this.rooms.push(room);
       return room;
@@ -272,4 +273,37 @@ export class RoomsRepository {
     }
   }
 
+  getPresentationInRoom(presentationId: any) {
+    try {
+      const room = this.rooms.find(
+        (room) => room.presentation.presentationId === presentationId,
+      );
+      if (!room) {
+        throw new NotAcceptableException(
+          `Room with id ${presentationId} not found`,
+        );
+      }
+      return room.presentation;
+    } catch (error) {
+      throw new Error(`Error in get presentation: ${error.message}`);
+    }
+  }
+  removeRoom(roomId: string): any {
+    try {
+      const roomRemoved = [];
+      this.rooms = this.rooms.filter((room) => {
+        if (room.id === roomId) {
+          roomRemoved.push(room);
+          return false;
+        }
+        return true;
+      });
+      if (roomRemoved.length === 0) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      return roomRemoved[0];
+    } catch (error) {
+      throw new Error(`Error in remove room: ${error.message}`);
+    }
+  }
 }

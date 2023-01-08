@@ -10,6 +10,7 @@ import { RoomsRepository } from './rooms.repository';
     ConfigModule,
     PresentationsModule,
   ],
-  providers: [RoomsGateway, RoomsService, RoomsRepository]
+  providers: [RoomsGateway, RoomsService, RoomsRepository],
+  exports: [RoomsService],
 })
 export class RoomsModule { }
