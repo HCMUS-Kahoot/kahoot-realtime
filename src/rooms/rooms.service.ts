@@ -5,6 +5,7 @@ import { RoomsRepository } from './rooms.repository';
 
 @Injectable()
 export class RoomsService {
+
   private readonly logger = new Logger(RoomsService.name);
   constructor(
     private readonly roomsRepository: RoomsRepository,
@@ -14,6 +15,15 @@ export class RoomsService {
     const presentation = await this.presentationService.findOne(
       createRoomDto.presentationId,
     );
+    const group = await this.presentationService.getGroupIdByPresentationId(
+      createRoomDto.presentationId,
+    );
+    if (group?.groupId) {
+      presentation.groupId = group?.groupId;
+    }
+    if (group?.name) {
+      presentation.name = group?.name;
+    }
 
     this.logger.log(`presentation: ${presentation}`);
     if (!presentation) {
@@ -24,7 +34,9 @@ export class RoomsService {
 
     return this.roomsRepository.create({ ...createRoomDto, presentation });
   }
-
+  markAsReadQuestion(roomId: string, questionId: string) {
+    return this.roomsRepository.markAsReadQuestion(roomId, questionId);
+  }
   publicChat(roomId: string, arg1: { id: string; message: string; }) {
     return this.roomsRepository.userPublicChat(roomId, arg1);
   }
@@ -90,5 +102,31 @@ export class RoomsService {
       question,
     );
     return roomUpdated;
+  }
+
+  async getPresentationInRoom(presentationId) {
+    return this.roomsRepository.getPresentationInRoom(presentationId);
+  }
+  async getPresentationInRoomByGroupId(groupId) {
+    return this.roomsRepository.getPresentationInRoomByGroupId(groupId);
+  }
+  async endAndSaveRoom(roomId) {
+    const roomRemoved = this.roomsRepository.removeRoom(roomId);
+    const data = {
+      userId: roomRemoved.host.hostId,
+      presentation: roomRemoved.presentation.presentationId,
+      startTime: new Date(roomRemoved.startTime),
+      endTime: new Date(),
+      joinUser: roomRemoved.users.map((user) => user.id),
+      chats: roomRemoved.chats,
+      questions: roomRemoved.questions,
+      groupId: roomRemoved.groupId,
+    };
+    this.logger.log(`data: ${JSON.stringify(data)}`);
+    await this.presentationService.endAndSavePresentation(data);
+    return roomRemoved;
+  }
+  async getGroupId(id) {
+    return await this.presentationService.getGroupIdByPresentationId(id);
   }
 }

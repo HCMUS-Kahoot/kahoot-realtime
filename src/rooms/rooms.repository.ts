@@ -31,6 +31,7 @@ export class RoomsRepository {
         host: {
           hostId: createRoomDto.hostId,
           clientHostId: createRoomDto.clientHostId,
+          name: createRoomDto.name || 'Host',
           chats: [],
           questions: [],
         },
@@ -38,9 +39,14 @@ export class RoomsRepository {
           presentationId: createRoomDto.presentationId,
           presentation: createRoomDto.presentation,
           slide: 0,
+          groupId: createRoomDto.presentation.groupId,
+          title: createRoomDto.presentation.name,
         },
         pin: createRoomPIN(),
         users: [],
+        chats: [],
+        questions: [],
+        startTime: new Date().getTime(),
       };
       this.rooms.push(room);
       return room;
@@ -101,8 +107,6 @@ export class RoomsRepository {
           name: user.name,
           clientId: user.clientId,
           answer: [],
-          chats: [],
-          questions: [],
         });
       }
       return room;
@@ -181,11 +185,14 @@ export class RoomsRepository {
       if (!userExists) {
         throw new NotAcceptableException(`User with id ${user.id} not found`);
       }
-      userExists.chats.push({
+      const newMessage = {
+        userId: user.id,
+        name: userExists.name,
         message: user.message,
         time: Date.now(),
-      });
-      return room;
+      };
+      room.chats.push(newMessage);
+      return newMessage;
     } catch (error) {
       throw new Error(`Error in user public chat: ${error.message}`);
     }
@@ -202,13 +209,17 @@ export class RoomsRepository {
       userExists =
         userExists || (room.host.hostId === question.userId ? room.host : null);
 
-      userExists.questions.push({
+      const newQuestion = {
         question: question.question,
         time: Date.now(),
         questionId: createUserID(),
         voted: [],
-      });
-      return room;
+        userId: question.userId,
+        read: false,
+      };
+
+      room.questions.push(newQuestion);
+      return newQuestion;
     } catch (error) {
       throw new Error(`Error in add question: ${error.message}`);
     }
@@ -229,18 +240,85 @@ export class RoomsRepository {
           `User with id ${question.userId} not found`,
         );
       }
-      userExists.questions.forEach((q) => {
-        if (q.questionId === question.questionId) {
-          if (q.voted.includes(question.userIdVote)) {
-            q.voted.splice(q.voted.indexOf(question.userIdVote), 1);
-          } else {
-            q.voted.push(question.userIdVote);
-          }
-        }
-      });
-      return room;
+      const newQuestion = room.questions.find(
+        (q) => q.questionId === question.questionId,
+      );
+      if (newQuestion.voted.includes(question.userIdVote)) {
+        newQuestion.voted.splice(
+          newQuestion.voted.indexOf(question.userIdVote),
+          1,
+        );
+      } else {
+        newQuestion.voted.push(question.userIdVote);
+      }
+      return newQuestion;
     } catch (error) {
       throw new Error(`Error in vote question: ${error.message}`);
+    }
+  }
+
+  markAsReadQuestion(roomId: any, questionId) {
+    try {
+      this.logger.log(`removeQuestion: ${roomId} - ${questionId}`);
+      const room = this.rooms.find((room) => room.id === roomId);
+      if (!room) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      const newQuestions = room.questions.find(
+        (q) => q.questionId === questionId,
+      );
+      newQuestions.read = true;
+      return newQuestions;
+    } catch (error) {
+      throw new Error(`Error in remove question: ${error.message}`);
+    }
+  }
+
+  getPresentationInRoom(presentationId: any) {
+    try {
+      const room = this.rooms.find(
+        (room) => room.presentation.presentationId === presentationId,
+      );
+      if (!room) {
+        throw new NotAcceptableException(
+          `Room with id ${presentationId} not found`,
+        );
+      }
+      return room.presentation;
+    } catch (error) {
+      throw new Error(`Error in get presentation: ${error.message}`);
+    }
+  }
+  getPresentationInRoomByGroupId(groupId: string) {
+    try {
+      const room = this.rooms.find(
+        (room) => room.presentation.groupId === groupId,
+      );
+      if (!room) {
+        return null;
+      }
+      return room;
+    } catch (error) {
+      throw new Error(`Error in get presentation: ${error.message}`);
+    }
+  }
+
+  removeRoom(roomId: string): any {
+    try {
+      const roomRemoved = [];
+      this.rooms = this.rooms.filter((room) => {
+        if (room.id === roomId) {
+          roomRemoved.push(room);
+          return false;
+        }
+        return true;
+      });
+      if (roomRemoved.length === 0) {
+        throw new NotAcceptableException(`Room with id ${roomId} not found`);
+      }
+      return roomRemoved[0];
+    } catch (error) {
+      throw new Error(`Error in remove room: ${error.message}`);
     }
   }
 }

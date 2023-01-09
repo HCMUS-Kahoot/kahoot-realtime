@@ -69,8 +69,29 @@ export class RoomsGateway
       this.logger.log(`Room: ${JSON.stringify(room)}`);
       client.join(room.id);
       this.io.to(room.id).emit('room_updated', room);
+      if (room.presentation.groupId) {
+        this.io.to(room.presentation.groupId).emit('group_listen_room', room);
+      }
     } catch (error) {
       this.logger.error(error);
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
+  @SubscribeMessage('groupListenRoom')
+  async groupListenRoom(
+    @MessageBody() data: { groupId: string; },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      client.join(data.groupId);
+      // this.io.to(data.groupId).emit('group_listen_room', data.groupId);
+      const roomIsPresenting =
+        await this.roomsService.getPresentationInRoomByGroupId(data.groupId);
+      if (roomIsPresenting) {
+        this.io.to(data.groupId).emit('group_listen_room', roomIsPresenting);
+      }
+    } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
@@ -126,14 +147,14 @@ export class RoomsGateway
   @SubscribeMessage('publicChat')
   async publicChat(
     @MessageBody() data: { message: string; roomId: string; userId: string },
-    @ConnectedSocket() client: Socket
+    @ConnectedSocket() client: Socket,
   ) {
     try {
-      const room = await this.roomsService.publicChat(data.roomId, {
+      const newMessage = await this.roomsService.publicChat(data.roomId, {
         id: data.userId,
         message: data.message,
       });
-      this.io.to(room.id).emit('room_updated', room);
+      this.io.to(data.roomId).emit('public_chat', newMessage);
     } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
@@ -146,11 +167,11 @@ export class RoomsGateway
   ) {
     const { userId, roomId, question } = data;
     try {
-      const room = await this.roomsService.addQuestion(roomId, {
+      const newQuestion = await this.roomsService.addQuestion(roomId, {
         userId,
         question,
       });
-      this.io.to(room.id).emit('room_updated', room);
+      this.io.to(roomId).emit('add_question', newQuestion);
     } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
@@ -169,15 +190,51 @@ export class RoomsGateway
   ) {
     const { userId, roomId, questionId, userIdVote } = data;
     try {
-      const room = await this.roomsService.voteQuestion(roomId, {
+      const newQuestion = await this.roomsService.voteQuestion(roomId, {
         userId,
         questionId,
         userIdVote,
       });
-      this.io.to(room.id).emit('room_updated', room);
+      this.io.to(roomId).emit('vote_question', newQuestion);
     } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
 
+  @SubscribeMessage('markAsReadQuestion')
+  async markAsReadQuestion(
+    @MessageBody() data: { questionId: string; roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, questionId } = data;
+    try {
+      const newQuestion = await this.roomsService.markAsReadQuestion(
+        roomId,
+        questionId,
+      );
+      this.io.to(roomId).emit('mark_as_read_question', newQuestion);
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
+  @SubscribeMessage('endPresentation')
+  async endPresentation(
+    @MessageBody() data: { roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = data;
+    try {
+      const room = await this.roomsService.endAndSaveRoom(roomId);
+      this.io.to(roomId).emit('end_presentation', room);
+      if (room.presentation.groupId) {
+        this.io.to(room.presentation.groupId).emit('group_listen_room', {
+          ...room,
+          status: "end",
+        });
+      }
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
 }
