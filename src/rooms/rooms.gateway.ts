@@ -69,8 +69,29 @@ export class RoomsGateway
       this.logger.log(`Room: ${JSON.stringify(room)}`);
       client.join(room.id);
       this.io.to(room.id).emit('room_updated', room);
+      if (room.presentation.groupId) {
+        this.io.to(room.presentation.groupId).emit('group_listen_room', room);
+      }
     } catch (error) {
       this.logger.error(error);
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+
+  @SubscribeMessage('groupListenRoom')
+  async groupListenRoom(
+    @MessageBody() data: { groupId: string; },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      client.join(data.groupId);
+      // this.io.to(data.groupId).emit('group_listen_room', data.groupId);
+      const roomIsPresenting =
+        await this.roomsService.getPresentationInRoomByGroupId(data.groupId);
+      if (roomIsPresenting) {
+        this.io.to(data.groupId).emit('group_listen_room', roomIsPresenting);
+      }
+    } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
   }
@@ -206,6 +227,12 @@ export class RoomsGateway
     try {
       const room = await this.roomsService.endAndSaveRoom(roomId);
       this.io.to(roomId).emit('end_presentation', room);
+      if (room.presentation.groupId) {
+        this.io.to(room.presentation.groupId).emit('group_listen_room', {
+          ...room,
+          status: "end",
+        });
+      }
     } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }

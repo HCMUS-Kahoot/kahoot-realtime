@@ -15,6 +15,15 @@ export class RoomsService {
     const presentation = await this.presentationService.findOne(
       createRoomDto.presentationId,
     );
+    const group = await this.presentationService.getGroupIdByPresentationId(
+      createRoomDto.presentationId,
+    );
+    if (group?.groupId) {
+      presentation.groupId = group?.groupId;
+    }
+    if (group?.name) {
+      presentation.name = group?.name;
+    }
 
     this.logger.log(`presentation: ${presentation}`);
     if (!presentation) {
@@ -98,6 +107,9 @@ export class RoomsService {
   async getPresentationInRoom(presentationId) {
     return this.roomsRepository.getPresentationInRoom(presentationId);
   }
+  async getPresentationInRoomByGroupId(groupId) {
+    return this.roomsRepository.getPresentationInRoomByGroupId(groupId);
+  }
   async endAndSaveRoom(roomId) {
     const roomRemoved = this.roomsRepository.removeRoom(roomId);
     const data = {
@@ -108,12 +120,13 @@ export class RoomsService {
       joinUser: roomRemoved.users.map((user) => user.id),
       chats: roomRemoved.chats,
       questions: roomRemoved.questions,
+      groupId: roomRemoved.groupId,
     };
-    console.log(data);
     this.logger.log(`data: ${JSON.stringify(data)}`);
-    const dataSaved = await this.presentationService.endAndSavePresentation(
-      data,
-    );
-    return dataSaved;
+    await this.presentationService.endAndSavePresentation(data);
+    return roomRemoved;
+  }
+  async getGroupId(id) {
+    return await this.presentationService.getGroupIdByPresentationId(id);
   }
 }

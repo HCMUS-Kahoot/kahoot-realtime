@@ -42,7 +42,18 @@ export class PresentationsService {
       throw new HttpException(error.message, error.status);
     }
   }
-
+  async getGroupIdByPresentationId(presentationId) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`/presentations/${presentationId}`),
+      );
+      this.logger.log(`response: ${JSON.stringify(response.data)}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error(`error: ${JSON.stringify(error)}`);
+      throw new HttpException(error.message, error.status);
+    }
+  }
   update(id: number, updatePresentationDto: UpdatePresentationDto) {
     return `This action updates a #${id} presentation`;
   }

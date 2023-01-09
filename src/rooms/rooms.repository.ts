@@ -39,6 +39,8 @@ export class RoomsRepository {
           presentationId: createRoomDto.presentationId,
           presentation: createRoomDto.presentation,
           slide: 0,
+          groupId: createRoomDto.presentation.groupId,
+          title: createRoomDto.presentation.name,
         },
         pin: createRoomPIN(),
         users: [],
@@ -189,7 +191,6 @@ export class RoomsRepository {
         message: user.message,
         time: Date.now(),
       };
-      console.log(userExists);
       room.chats.push(newMessage);
       return newMessage;
     } catch (error) {
@@ -288,6 +289,20 @@ export class RoomsRepository {
       throw new Error(`Error in get presentation: ${error.message}`);
     }
   }
+  getPresentationInRoomByGroupId(groupId: string) {
+    try {
+      const room = this.rooms.find(
+        (room) => room.presentation.groupId === groupId,
+      );
+      if (!room) {
+        return null;
+      }
+      return room;
+    } catch (error) {
+      throw new Error(`Error in get presentation: ${error.message}`);
+    }
+  }
+
   removeRoom(roomId: string): any {
     try {
       const roomRemoved = [];
