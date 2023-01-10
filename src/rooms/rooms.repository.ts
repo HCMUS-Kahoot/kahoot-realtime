@@ -129,6 +129,7 @@ export class RoomsRepository {
       userExists.answer.push({
         choice: user.answer,
         slideIndex: user.slideIndex,
+        time: Date.now(),
       });
       return room;
     } catch (error) {

@@ -80,7 +80,7 @@ export class RoomsGateway
 
   @SubscribeMessage('groupListenRoom')
   async groupListenRoom(
-    @MessageBody() data: { groupId: string; },
+    @MessageBody() data: { groupId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
@@ -106,8 +106,22 @@ export class RoomsGateway
         ...user,
         clientId: client.id,
       });
-      client.join(room.id);
-      this.io.to(room.id).emit('room_updated', room);
+      if (room.presentation.groupId) {
+        const member = await this.roomsService.getRoleInGroup(
+          room.presentation.groupId,
+          user.id,
+        );
+        if (!member) {
+          this.io.to(client.id).emit('error_join_room', {
+            message: 'You are not a member of this group',
+          });
+        }
+        client.join(room.id);
+        this.io.to(room.id).emit('room_updated', room);
+      } else {
+        client.join(room.id);
+        this.io.to(room.id).emit('room_updated', room);
+      }
     } catch (error) {
       this.io.to(client.id).emit('realtime_error', error.message);
     }
@@ -115,7 +129,8 @@ export class RoomsGateway
 
   @SubscribeMessage('submitAnswer')
   async submit(
-    @MessageBody() data: { answer: any; slideIndex: string; roomId: string; userId: string },
+    @MessageBody()
+    data: { answer: any; slideIndex: string; roomId: string; userId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
@@ -134,7 +149,7 @@ export class RoomsGateway
   @SubscribeMessage('changeSlide')
   async changeSlide(
     @MessageBody() data: { slide: number; roomId: string },
-    @ConnectedSocket() client: Socket
+    @ConnectedSocket() client: Socket,
   ) {
     try {
       const room = await this.roomsService.changeSlide(data.roomId, data.slide);
@@ -230,7 +245,44 @@ export class RoomsGateway
       if (room.presentation.groupId) {
         this.io.to(room.presentation.groupId).emit('group_listen_room', {
           ...room,
-          status: "end",
+          status: 'end',
+        });
+      }
+    } catch (error) {
+      this.io.to(client.id).emit('realtime_error', error.message);
+    }
+  }
+  @SubscribeMessage('checkUserCanJoinRoom')
+  async checkCanJoinRoom(
+    @MessageBody() data: { pin: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { pin, userId } = data;
+    try {
+      const room = await this.roomsService.findOneByPin(pin);
+      if (room.presentation.groupId) {
+        const userInGroup = await this.roomsService.getRoleInGroup(
+          room.presentation.groupId,
+          userId,
+        );
+        if (!userInGroup) {
+          this.io.to(client.id).emit('check_user_can_join_room', {
+            status: 'ERROR',
+            message: "You don't have permission to join this presentation"
+          });
+        } else {
+          this.io.to(client.id).emit('check_user_can_join_room', {
+            ...userInGroup,
+            presentationId: room.presentation.presentationId,
+            pin: room.pin,
+            status: 'OK',
+          });
+        }
+      } else {
+        this.io.to(client.id).emit('check_user_can_join_room', {
+          status: 'OK',
+          pin: room.pin,
+          message: "This is a public presentation",
         });
       }
     } catch (error) {

@@ -6,6 +6,7 @@ import { UpdatePresentationDto } from './dto/update-presentation.dto';
 
 @Injectable()
 export class PresentationsService {
+
   private readonly logger = new Logger(PresentationsService.name);
   constructor(private readonly httpService: HttpService) { }
 
@@ -60,5 +61,17 @@ export class PresentationsService {
 
   remove(id: number) {
     return `This action removes a #${id} presentation`;
+  }
+  async getRoleInGroup(groupId: any, userId: any) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`/group-members/${groupId}/${userId}`),
+      );
+      this.logger.log(`response: ${JSON.stringify(response.data)}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error(`error: ${JSON.stringify(error)}`);
+      return null;
+    }
   }
 }
