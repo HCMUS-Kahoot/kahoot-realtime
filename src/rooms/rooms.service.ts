@@ -44,8 +44,11 @@ export class RoomsService {
     return `This action returns all rooms`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} room`;
+  findOne(roomId: string) {
+    return this.roomsRepository.findOne(roomId);
+  }
+  findOneByPin(pin: string) {
+    return this.roomsRepository.findByPin(pin);
   }
 
   update(id: number, updateRoomDto: UpdateRoomDto) {
@@ -128,5 +131,8 @@ export class RoomsService {
   }
   async getGroupId(id) {
     return await this.presentationService.getGroupIdByPresentationId(id);
+  }
+  async getRoleInGroup(groupId, userId) {
+    return this.presentationService.getRoleInGroup(groupId, userId);
   }
 }
