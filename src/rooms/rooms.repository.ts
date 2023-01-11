@@ -24,6 +24,13 @@ export class RoomsRepository {
       if (existedRoom) {
         existedRoom.host.hostId = createRoomDto.hostId;
         existedRoom.host.clientHostId = createRoomDto.clientHostId;
+        existedRoom.presentation = {
+          presentationId: createRoomDto.presentationId,
+          presentation: createRoomDto.presentation,
+          slide: existedRoom.presentation?.slide || 0,
+          groupId: createRoomDto.presentation.groupId,
+          title: createRoomDto.presentation.name,
+        }
         return existedRoom;
       }
       const room = {
